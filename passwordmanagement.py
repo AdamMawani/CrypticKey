@@ -1,4 +1,9 @@
 import re
+from flask import Flask, request, jsonify
+from flask_bcrypt import Bcrypt
+
+app = Flask(__name__)
+bcrypt = Bcrypt(app)
 
 # Dictionary to store user credentials
 user_credentials = {}
@@ -33,41 +38,35 @@ def register(username, password):
     if not check_password_strength(password):
         return "Password does not meet the criteria for strength."
     
-    user_credentials[username] = password
+    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+    user_credentials[username] = hashed_password
     return "Registration successful. You can now login."
 
 def login(username, password):
     if username not in user_credentials:
         return "Username not found. Please register first."
     
-    if user_credentials[username] != password:
+    hashed_password = user_credentials[username]
+    if not bcrypt.check_password_hash(hashed_password, password):
         return "Incorrect password. Please try again."
     
     return "Login successful."
 
-def main():
-    while True:
-        print("\n1. Register")
-        print("2. Login")
-        print("3. Exit")
-        choice = input("Enter your choice: ")
-        
-        if choice == "1":
-            username = input("Enter username: ")
-            password = input("Enter password: ")
-            print(register(username, password))
-        
-        elif choice == "2":
-            username = input("Enter username: ")
-            password = input("Enter password: ")
-            print(login(username, password))
-        
-        elif choice == "3":
-            print("Exiting...")
-            break
-        
-        else:
-            print("Invalid choice. Please enter a valid option.")
+@app.route('/register', methods=['POST'])
+def register_route():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    response = register(username, password)
+    return jsonify({'message': response})
+
+@app.route('/login', methods=['POST'])
+def login_route():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    response = login(username, password)
+    return jsonify({'message': response})
 
 if __name__ == "__main__":
-    main()
+    app.run(debug=True)
