@@ -1,6 +1,8 @@
 import re
+import uuid
 from flask import Flask, request, jsonify
 from flask_bcrypt import Bcrypt
+from flask import session
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
@@ -45,6 +47,47 @@ def login(username, password):
         return "Incorrect password. Please try again."
     
     return "Login successful."
+
+def change_password(username, old_password, new_password):
+    if username not in user_credentials:
+        return "Username not found."
+    
+    hashed_password = user_credentials[username]
+    if not bcrypt.check_password_hash(hashed_password, old_password):
+        return "Incorrect old password."
+    
+    if not check_password_strength(new_password):
+        return "New password does not meet the criteria for strength."
+    
+    new_hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    user_credentials[username] = new_hashed_password
+    return "Password changed successfully."
+
+@app.route('/change-password', methods=['POST'])
+def change_password_route():
+    data = request.get_json()
+    username = data.get('username')
+    old_password = data.get('old_password')
+    new_password = data.get('new_password')
+    response = change_password(username, old_password, new_password)
+    return jsonify({'message': response})
+
+def logout():
+    session.clear()
+    return "Logged out successfully."
+
+@app.route('/logout', methods=['GET'])
+def logout_route():
+    response = logout()
+    return jsonify({'message': response})
+
+# New route for password reset request
+@app.route('/request-password-reset', methods=['POST'])
+def request_password_reset_route():
+    data = request.get_json()
+    email = data.get('email')
+    response = request_password_reset(email)
+    return jsonify({'message': response})
 
 @app.route('/register', methods=['POST'])
 def register_route():
