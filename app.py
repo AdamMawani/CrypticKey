@@ -30,6 +30,9 @@ def register(username, password, email):
     if username in user_credentials:
         return "Username already exists. Please choose another username."
     
+    if email in user_emails.values():
+        return "Email already registered. Please use another email address."
+
     if not check_password_strength(password):
         return "Password does not meet the criteria for strength."
     
@@ -71,6 +74,13 @@ def logout():
     session.clear()
     return "Logged out successfully."
 
+# Password reset request function (stub)
+def request_password_reset(email):
+    if email not in user_emails.values():
+        return "Email not found. Please register first."
+    # Implement the email sending functionality here
+    return "Password reset request received. (Functionality not implemented)"
+
 # Route for user registration
 @app.route('/register', methods=['POST'])
 def register_route():
@@ -106,13 +116,12 @@ def logout_route():
     response = logout()
     return jsonify({'message': response})
 
-# New route for password reset request (stub)
+# Route for password reset request
 @app.route('/request-password-reset', methods=['POST'])
 def request_password_reset_route():
     data = request.get_json()
     email = data.get('email')
-    # Implement password reset functionality here
-    response = "Password reset request received. (Functionality not implemented)"
+    response = request_password_reset(email)
     return jsonify({'message': response})
 
 if __name__ == "__main__":
